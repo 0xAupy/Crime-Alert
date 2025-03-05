@@ -1,30 +1,55 @@
-//naming it auth.route.js instead of auth.js is only to be able to recognize
-//just a convension
-
 import express from "express";
-import {
-  login,
-  logout,
-  signup,
-  getAuthUser,
-} from "../controllers/auth.controllers.js"; // auto imports
-import { protectRoute } from "../middleware/auth.middleware.js";
+import passport from "passport";
+import dotenv from "dotenv";
+dotenv.config();
+
 const router = express.Router();
 
-router.post("/signup", signup);
-// this takes a path and a callback function (this callback function is written in controllers)
-// when called (i.e. visited the /signup path). will execute the callback funtion
-// .post instead of .get, because user posts their data to the backend when sineup
-// post when writing to server, get when fetching from server
-// post is not catch by browser, and not visible in URL
+router.get("/login/success", (req, res) => {
+  if (req.user) {
+    res.status(200).json({
+      error: false,
+      message: "successfully logged in",
+      user: req.user,
+    });
+  } else {
+    res.status(403).json({
+      error: true,
+      message: "not authorized",
+    });
+  }
+});
 
-router.post("/login", login);
+router.get("/login/failed", (req, res) => {
+  res.status(401).json({
+    error: true,
+    message: "login failure",
+  });
+});
 
-router.post("/logout", logout);
+router.get(
+  "/google/callback",
+  passport.authenticate("google", {
+    successRedirect: process.env.CLIENT_URL,
+    failureRedirect: "/api/auth/login/failed",
+  })
+);
 
-router.get("/me", protectRoute, getAuthUser);
-// if user is authenticated, keep them , else if error then move then to login page
+router.get(
+  "/google",
+  passport.authenticate("google", {
+    scope: ["profile", "email"],
+    prompt: "consent", // Forces the user to reselect their account
+  })
+);
 
-export default router; //this can be imported from other files now
-//only one defult export is allowed per module
-//so by using export default we are specifying that this is the main export
+router.get("/logout", (req, res, next) => {
+  req.logout((err) => {
+    if (err) {
+      return next(err);
+    }
+    res.redirect(process.env.CLIENT_URL);
+  });
+});
+
+export default router;
