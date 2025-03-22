@@ -15,11 +15,11 @@ export const signup = async (req, res) => {
         .json({ message: "password must be at least 6 char" });
     }
 
-    const user = await User.findOne({ email }); //searching if exists...returns that object
+    const user = await User.findOne({ email });
 
     if (user) return res.status(400).json({ message: "Email already exists" });
 
-    const salt = await bcrypt.genSalt(10); //????? 10 is convension
+    const salt = await bcrypt.genSalt(10);
 
     const hashedPassword = await bcrypt.hash(password, salt);
 
@@ -31,7 +31,7 @@ export const signup = async (req, res) => {
 
     if (newUser) {
       generateToken(newUser._id, res); //
-      await newUser.save(); //await because its in cloud  , SAVE TO MONGO
+      await newUser.save();
 
       res.status(201).json({
         _id: newUser._id,
@@ -53,14 +53,6 @@ export const login = async (req, res) => {
     const user = await User.findOne({ email });
 
     if (!user) return res.status(400).json({ message: "invalid credential" });
-
-    // const salt = await bcrypt.genSalt(10);
-
-    // const hashedPassword = await bcrypt.hash(password,salt);
-
-    // if(hashedPassword !== user.password) return res.status(400).json({message: "invalid credential"});
-
-    //or do it like this:
 
     const isValidPass = await bcrypt.compare(password, user.password);
 
@@ -100,5 +92,3 @@ export const getAuthUser = (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-
-// exporting so it can be imported from somewhere else...
